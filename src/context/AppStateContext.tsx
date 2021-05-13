@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer } from 'react';
+import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { nanoid } from 'nanoid';
 import {
   findItemIndexById,
@@ -8,6 +8,8 @@ import {
   insertItemAtIndex,
 } from '../utils/arrayUtils';
 import { DragItem } from '../utils/DragItem';
+import { save } from '../api/api';
+import { withData } from '../withData';
 
 interface Task {
   id: string;
@@ -34,13 +36,20 @@ interface AppStateContextProps {
 const AppStateContext = createContext<AppStateContextProps>({} as AppStateContextProps);
 
 // Create provider HOC
-export const AppStateProvider = ({ children }: React.PropsWithChildren<{}>) => {
-  // create reducer: reducer function and the initial state
-  const [state, dispatch] = useReducer(appStateReducer, appData);
-  return (
-    <AppStateContext.Provider value={{ state, dispatch }}>{children}</AppStateContext.Provider>
-  );
-};
+export const AppStateProvider = withData(
+  ({ children, initialState }: React.PropsWithChildren<{ initialState: AppState }>) => {
+    // create reducer: reducer function and the initial state
+    const [state, dispatch] = useReducer(appStateReducer, initialState);
+
+    useEffect(() => {
+      save(state);
+    }, [state]);
+
+    return (
+      <AppStateContext.Provider value={{ state, dispatch }}>{children}</AppStateContext.Provider>
+    );
+  }
+);
 
 // Create useAppState hook to access the state context
 export const useAppState = () => {
